@@ -11,14 +11,23 @@ class PostController extends Controller
     {
         $request->validate([
             'page' => 'numeric',
-            'itemsPerPage' => 'numeric',
+            'items_per_page' => 'numeric',
+            'start_date' => 'string|required_with:end_date',
+            'end_date' => 'string|required_with:start_date',
         ]);
 
-        $itemsPerPage = $request->input('itemsPerPage') ?? 25;
+        $itemsPerPage = $request->input('items_per_page') ?? 25;
 
-        $posts = Post::orderBy('published_date', 'desc')
-                     ->simplePaginate($itemsPerPage);
+        $query = Post::orderBy('published_date', 'desc');
 
+        if ($request->has('start_date')){
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $query = $query->whereBetween('published_date', [$start_date, $end_date]);
+        }
+
+        $posts = $query->simplePaginate($itemsPerPage);
 
         return responder()->success($posts)->respond();
     }
